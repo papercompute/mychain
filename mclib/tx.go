@@ -1,18 +1,29 @@
 package mclib
 
 import (
-	_ "bytes"
-	_ "encoding/binary"
-	_ "errors"
 	"time"
+	"bytes"
+	"encoding/binary"
 	"crypto/sha256"
+	"math/rand"
 )
+
 type TxHeader struct{
-	CreatedAt     uint32
-	To            []byte 
 	From          []byte
+	To            []byte 
+	Time          uint32
+	Nonce         uint32
 	Hash          []byte
-	Nonce         uint32	
+}
+
+func (h *TxHeader) Bytes() []byte{
+	buf := new(bytes.Buffer)
+	buf.Write(h.From)
+	buf.Write(h.To)
+	binary.Write(buf, binary.LittleEndian, h.Time)
+	binary.Write(buf, binary.LittleEndian, h.Nonce)
+	buf.Write(h.Hash)
+	return buf.Bytes()
 }
 
 type TxBody struct {
@@ -21,7 +32,7 @@ type TxBody struct {
 	Signature     []byte
 }
 
-func TxHash(data []byte) []byte{
+func ComputeSha256(data []byte) []byte{
 	hash := sha256.New()
 	hash.Write(data)
 	return hash.Sum(nil)
@@ -30,11 +41,21 @@ func TxHash(data []byte) []byte{
 func NewTx(to, from, data []byte) *TxBody {
 	return &TxBody{
 		Header: TxHeader{
-			CreatedAt:uint32(time.Now().Unix()),
+			Time:uint32(time.Now().Unix()),
+			Nonce: rand.New(rand.NewSource(time.Now().UnixNano())).Uint32(),
 			To: to,
 			From: from,
-			Hash: TxHash(data),
+			Hash: ComputeSha256(data),
 		},
 		Data: data,
+		
 	}
 }
+
+func (tx *TxBody) Hash() []byte {
+	var b []byte
+	b=append(b,tx.Header.Bytes()...)
+	b=append(b,tx.Data...)
+	return ComputeSha256(b)
+}
+
