@@ -1,15 +1,11 @@
 package mclib
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"testing"
-	_ "fmt"
 )
 
 func TestSignVerify(t *testing.T) {
-	priv, err := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
+	priv, err := NewKey()
     if err != nil {
     	t.Errorf("GenerateKey error: %v", err)
     	return
